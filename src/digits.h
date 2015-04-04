@@ -1,12 +1,12 @@
 /**
-*  @file digits.h
-*
-*  Created on: 19.02.2012
-*  Copyright (c) Anton Gusev aka AHTOXA
-**/
+ *  @file digits.h
+ *
+ *  7 segment digital indicator class.
+ *  Copyright (c) Anton Gusev aka AHTOXA
+ **/
 
-#ifndef DIGITS_H_
-#define DIGITS_H_
+#ifndef DIGITS_H_INCLUDED
+#define DIGITS_H_INCLUDED
 
 #include <stdint.h>
 #include "hc595.h"
@@ -37,30 +37,33 @@ class DigitalIndicator
 		DIGIT_6 =  (SEG_A         | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G),
 		DIGIT_7 =  (SEG_A | SEG_B | SEG_C                                ),
 		DIGIT_8 =  (SEG_A | SEG_B | SEG_C | SEG_D | SEG_E | SEG_F | SEG_G),
-		DIGIT_9 =  (SEG_A | SEG_B | SEG_C | SEG_D         | SEG_F | SEG_G)
+		DIGIT_9 =  (SEG_A | SEG_B | SEG_C | SEG_D         | SEG_F | SEG_G),
+		DIGIT_C =  (                        SEG_D | SEG_E         | SEG_G),
+		DIGIT_B =  (                SEG_C | SEG_D | SEG_E | SEG_F | SEG_G),
+		DIGIT_R =  (                                SEG_E         | SEG_G),
 	};
 
 	enum { DIGIT_COUNT = 4 };
+	enum { MAX_BRIGHTNESS = 16 };
+public:
+	DigitalIndicator();
+	void SetText(char const* data);
+	const uint8_t& operator[](const int index) { return arr_[index]; }
+	void SetColon(bool val) { dot_ = val; }
+	bool GetDot() { return dot_; }
+	void Refresh();
+	void SetBrightness(int val);
+	int GetBrightness() { return 20 - refreshSteps_; }
 
 private:
 	Hc595<> HC595_;
 	bool dot_;
-	int brightness_;
+	int refreshSteps_;
 	int pos_;
 	uint8_t arr_[DIGIT_COUNT];
 
 	static const uint8_t digits[];
-	uint8_t c_v(uint8_t c);
-public:
-	DigitalIndicator();
-	void SetValue(double value, int precision = 0);
-	const uint8_t& operator[](const int index) { return arr_[index]; }
-	void SetDot(bool val) { dot_ = val; }
-	bool GetDot() { return dot_; }
-	void UpdateTime();
-	void Refresh();
-	void SetBrightness(uint8_t val);
-	uint8_t GetBrightness() { return brightness_; }
+	uint8_t CharToCode(uint8_t c);
 };
 
-#endif /* DIGITS_H_ */
+#endif // DIGITS_H_INCLUDED

@@ -1,21 +1,32 @@
+/**
+*  @file hw.h
+*
+*  Project hardware definitions.
+*  Copyright © 2015 Anton B. Gusev aka AHTOXA
+**/
+
 #ifndef HW_H_INCLUDED
 #define HW_H_INCLUDED
 
+/**
+ * Keyboard buttons
+ */
 #include "pin.h"
 
-typedef Pin<'B', 8, 'L'> PinUp;
-typedef Pin<'B', 9, 'L'> PinDown;
+typedef Pin<'B', 8, 'L'> ButtonUp;
+typedef Pin<'B', 9, 'L'> ButtonDown;
 
+/**
+ * Real-time clock module
+ */
 #include "rtc.h"
 typedef RtcModule<> Rtc;
-extern Rtc rtc;
 
+/**
+ * Keyboard
+ */
 #include "kbd.h"
-typedef Keyboard<8> kbd_t;
-extern kbd_t kbd;
-
-#include "digits.h"
-extern DigitalIndicator digits;
+typedef Keyboard<8> Kbd;
 
 enum
 {
@@ -27,8 +38,8 @@ template <int buf_size>
 uint16_t Keyboard<buf_size>::ReadInput()
 {
 	uint16_t ret = 0;
-	if (PinUp::Signalled()) ret |= BUTTON_UP;
-	if (PinDown::Signalled()) ret |= BUTTON_DOWN;
+	if (ButtonUp::Signalled()) ret |= BUTTON_UP;
+	if (ButtonDown::Signalled()) ret |= BUTTON_DOWN;
 	return ret;
 }
 

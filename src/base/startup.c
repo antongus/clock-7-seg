@@ -9,12 +9,13 @@
 *
 *******************************************************************************/
 
-extern unsigned long _etext;
-extern unsigned long _sidata;
-extern unsigned long _sdata;
-extern unsigned long _edata;
-extern unsigned long _sbss;
-extern unsigned long _ebss;
+#include <string.h>
+
+extern unsigned char _sidata;
+extern unsigned char _sdata;
+extern unsigned char _edata;
+extern unsigned char _sbss;
+extern unsigned char _ebss;
 extern unsigned long _estack;
 extern unsigned long __ctors_start__;
 extern unsigned long __ctors_end__;
@@ -22,16 +23,9 @@ extern unsigned long __ctors_end__;
 extern unsigned long __dtors_start__;
 extern unsigned long __dtors_end__;
 
-void Reset_Handler(void) __attribute__((__interrupt__));
-extern int main(void);
-void __Init_Data(void);
+void Reset_Handler(void);
 
-	/* Project-level external memory bus initialisation function */
-void SystemInit_ExtMemCtl(void);
-
-// ?? void WAEK Default_Handler(void);
-
-	/* Core interrupt vectors */
+/* Core interrupt vectors */
 void NMI_Handler(void);
 void HardFault_Handler(void);
 void MemManage_Handler(void);
@@ -39,8 +33,8 @@ void BusFault_Handler(void);
 void UsageFault_Handler(void);
 void SVC_Handler(void);
 void DebugMon_Handler(void);
-void PendSVC_ISR(void);
-void SystemTimer_ISR(void);
+void PendSV_Handler(void);
+void SysTick_Handler(void);
 
 	/* Device interrupt vectors */
 void WWDG_IRQHandler(void);
@@ -210,8 +204,9 @@ __attribute__ ((used))
 __attribute__ ((section(".isr_vector")))
 void (* const g_pfnVectors[])(void) =
 {
+	(intfunc)((unsigned long)&_estack),
+
 	/* Core interrupt vectors */
-(intfunc)((unsigned long)&_estack),
 	Reset_Handler,
 	NMI_Handler,
 	HardFault_Handler,
@@ -225,8 +220,8 @@ void (* const g_pfnVectors[])(void) =
 	SVC_Handler,
 	DebugMon_Handler,
 	0,
-	PendSVC_ISR,
-	SystemTimer_ISR,
+	PendSV_Handler,
+	SysTick_Handler,
 
 	/* Device interrupt vectors */
 	/* 0x40 */
@@ -454,37 +449,21 @@ void (* const g_pfnVectors[])(void) =
 #endif
 };
 
+extern void init_HW(void);
+extern int main(void);
+
 void Reset_Handler(void)
 {
-	__Init_Data();
+	memcpy(&_sdata, &_sidata, &_edata - &_sdata); // copy initialized variables
+	memset(&_sbss, 0, &_ebss - &_sbss);           // zero-fill uninitialized variables
+
+	init_HW();  // initialize hardware before calling constructors
+
+	// call constructors
+	for(unsigned long *ctors = &__ctors_start__; ctors < &__ctors_end__; )
+		((void(*)(void))(*ctors++))();
 
 	main();
-}
-
-extern void init_HW(void);
-
-void __Init_Data(void)
-{
-	unsigned long *pulSrc, *pulDest;
-
-	pulSrc = &_sidata;
-
-	for(pulDest = &_sdata; pulDest < &_edata; )
-		*(pulDest++) = *(pulSrc++);
-
-	for(pulDest = &_sbss; pulDest < &_ebss; )
-		*(pulDest++) = 0;
-
-	/* Init hardware before calling constructors */
-	init_HW();
-
-	/* External memory bus initialisation */
-	// ?? SystemInit_ExtMemCtl();
-
-	/* Call constructors */
-	unsigned long *ctors;
-	for(ctors = &__ctors_start__; ctors < &__ctors_end__; )
-		((void(*)(void))(*ctors++))();
 }
 
 /*******************************************************************************
@@ -585,13 +564,7 @@ void __Init_Data(void)
 #pragma weak CAN2_SCE_IRQHandler = Default_Handler
 #pragma weak OTG_FS_IRQHandler = Default_Handler
 
-#pragma weak SystemInit_ExtMemCtl = SystemInit_ExtMemCtl_Dummy
-
 void Default_Handler(void)
 {
 	for (;;);
-}
-
-void SystemInit_ExtMemCtl_Dummy(void) 
-{
 }

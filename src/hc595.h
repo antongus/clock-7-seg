@@ -5,8 +5,8 @@
 *  Copyright (c) Anton Gusev aka AHTOXA
 **/
 
-#ifndef HC595_H_
-#define HC595_H_
+#ifndef HC595_H_INCLUDED
+#define HC595_H_INCLUDED
 
 #include "pin.h"
 
@@ -45,10 +45,10 @@ template <typename Props>
 void Hc595<Props>::Write()
 {
 	LATCH::On();
-	for (unsigned i = 0; i < CHIP_COUNT; i++)
+	for (unsigned i = 0; i < CHIP_COUNT; ++i)
 	{
 		uint8_t byte = buf_[i];
-		for (unsigned bit = 0; bit < 8; bit++)
+		for (unsigned bit = 0; bit < 8; ++bit)
 		{
 			if (byte & 0x80)
 				DATA::On();
@@ -62,5 +62,4 @@ void Hc595<Props>::Write()
 	LATCH::Off();
 }
 
-
-#endif /* HC595_H_ */
+#endif // HC595_H_INCLUDED
